@@ -1,27 +1,3 @@
-Skip to content
-This repository
-Search
-Pull requests
-Issues
-Marketplace
-Explore
- @BenMusch
- Sign out
- Add Repo
- Watch 2,393
-  Star 60,958  Fork 27,467 github/gitignore
- Code  Pull requests 169  Projects 0  Insights
-Branch: master Find file Copy pathgitignore/Python.gitignore
-2ec038e  on Sep 20, 2017
-@shiftkey shiftkey Merge pull request #2464 from Cadmus/master
-61 contributors @arcresu @shiftkey @Lucretiel @Harrison-G @jwg4 @Metallicow @misaelnieto @pmsosa @svkampen @vltr @matheussl @hugovk @ghisvail @EvandroLG @DSIW @toanant @2Cubed @weinihou @Visgean @nvie @skuschel @sigo @scari @borntyping @roll @rmax and others
- 
-CODE CLIMATE OPTIONS
-Show issues
-Show test coverage
- Highlight covered lines
-RawBlameHistory     
-105 lines (84 sloc)  1.17 KB
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -138,3 +114,5 @@ Training
 Shop
 Blog
 About
+
+*.DS_STORE
