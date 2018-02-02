@@ -22,10 +22,11 @@ class resultSingleton:
 
 
 class queryThread(threading.Thread):
-    def __init__(self, threadID, boto_client, keys, query, result):
+    def __init__(self, threadID, boto_client, bucket, keys, query, result):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.boto_client = boto_client
+        self.bucket = bucket
         self.keys = keys
         self.query = query
         self.result = result
@@ -33,12 +34,13 @@ class queryThread(threading.Thread):
     def run(self):
         print("Starting %s" % self.threadID)
         self._execute_batch()
-        print("Done " + self.threadID)
+        print("Done %s" % self.threadID)
 
     def _execute_batch(self):
-        pprint.pprint('Running on batch:', self.keys)
+        pprint.pprint('Running on batch:')
+        pprint.pprint(self.keys)
         for key in self.keys:
-            self.result.insert(key, self._exceute_single_obj(key))
+            self.result.insert(key, self._execute_single_obj(key))
 
     def _execute_single_obj(self, key):
         dest = os.path.join(str(uuid.uuid4()))
@@ -63,17 +65,16 @@ class Client:
         self.bucket = bucket
 
     def execute(self, query, **kwargs):
-        num_threads = kwargs.pop('threads', 4)
+        num_threads = kwargs.pop('threads', 8)
         filter_func = kwargs.pop('filter', None)
 
-        results = {}
         if filter_func is None:
             def filter_func(obj):
                 return re.compile('^.*\.(db|sqlite|sqlite3)$').match(obj['Key'])
 
         objects = self.boto_client.list_objects(Bucket=self.bucket, **kwargs)['Contents']
 
-        batches = [[]] * num_threads
+        batches = [None] * num_threads
         threads = [None] * num_threads
         result = resultSingleton()
         i = 0
@@ -82,11 +83,15 @@ class Client:
             if not filter_func(obj):
                 continue
 
-            batches[i % num_threads].append(obj['Key'])
+            if i < num_threads:
+                # if i < num_threads, batches[i] is not initialized
+                batches[i] = [obj['Key']]
+            else:
+                batches[i % num_threads].append(obj['Key'])
             i += 1
 
         for i in range(num_threads):
-            threads[i] = queryThread(i, self.boto_client, batches[i], query, result)
+            threads[i] = queryThread(i, self.boto_client, self.bucket, batches[i], query, result)
 
         [ thread.start() for thread in threads ]
         [ thread.join() for thread in threads ]

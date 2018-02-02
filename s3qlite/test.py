@@ -15,4 +15,4 @@ client = s3qlite.client(
 client.connect('mittab-backups')
 
 if __name__ == '__main__':
-    pprint.pprint(client.execute('select * from tab_debater'))
+    print(client.execute('select * from tab_debater'))
