@@ -7,7 +7,9 @@ name = "pypi"
 
 [dev-packages]
 
-"Sphinx" = "*"
+sphinx = "*"
+python-dotenv = "*"
+
 
 [packages]
 
