@@ -14,7 +14,6 @@ class resultSingleton:
         self.val = {}
 
     def insert(self, key, val):
-        # TODO: lock this
         self.val[key] = val
 
     def get(self):
@@ -32,13 +31,9 @@ class queryThread(threading.Thread):
         self.result = result
 
     def run(self):
-        print("Starting %s" % self.threadID)
         self._execute_batch()
-        print("Done %s" % self.threadID)
 
     def _execute_batch(self):
-        pprint.pprint('Running on batch:')
-        pprint.pprint(self.keys)
         for key in self.keys:
             self.result.insert(key, self._execute_single_obj(key))
 
@@ -46,10 +41,14 @@ class queryThread(threading.Thread):
         dest = os.path.join(str(uuid.uuid4()))
         self.boto_client.download_file(self.bucket, key, dest)
 
-        conn = sqlite3.connect(dest)
-        results = []
-        for row in conn.execute(self.query):
-            results.append(row)
+        try:
+            conn = sqlite3.connect(dest)
+            results = []
+            for row in conn.execute(self.query):
+                results.append(row)
+        except Exception as e:
+            os.remove(dest)
+            raise e
 
         os.remove(dest)
         return results
