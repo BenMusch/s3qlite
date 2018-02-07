@@ -8,6 +8,8 @@ import re
 
 import boto3
 
+import error_handlers
+
 
 class resultSingleton:
     def __init__(self):
@@ -21,7 +23,7 @@ class resultSingleton:
 
 
 class queryThread(threading.Thread):
-    def __init__(self, threadID, boto_client, bucket, keys, query, result):
+    def __init__(self, threadID, boto_client, bucket, keys, query, result, on_error):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.boto_client = boto_client
@@ -29,6 +31,7 @@ class queryThread(threading.Thread):
         self.keys = keys
         self.query = query
         self.result = result
+        self.on_error = on_error
 
     def run(self):
         self._execute_batch()
@@ -48,7 +51,7 @@ class queryThread(threading.Thread):
                 results.append(row)
         except Exception as e:
             os.remove(dest)
-            raise e
+            return self.on_error(e)
 
         os.remove(dest)
         return results
@@ -66,6 +69,7 @@ class Client:
     def execute(self, query, **kwargs):
         num_threads = kwargs.pop('threads', 8)
         filter_func = kwargs.pop('filter', None)
+        on_error = kwargs.pop('on_error', error_handlers.return_error)
 
         if filter_func is None:
             def filter_func(obj):
@@ -90,7 +94,7 @@ class Client:
             i += 1
 
         for i in range(num_threads):
-            threads[i] = queryThread(i, self.boto_client, self.bucket, batches[i], query, result)
+            threads[i] = queryThread(i, self.boto_client, self.bucket, batches[i], query, result, on_error)
 
         [ thread.start() for thread in threads ]
         [ thread.join() for thread in threads ]
